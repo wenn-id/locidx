@@ -11,7 +11,7 @@ entire index.
 
 import os
 
-from .db import load
+from .db import descendant_path_filter
 
 
 def _limit_quotes(pattern):
@@ -31,8 +31,9 @@ def search(db, pattern, root=None, paths=None, max_results=200, case=False):
     clauses = []
 
     if root is not None:
-        clauses.append("f.path LIKE ?")
-        params.append(os.path.abspath(root) + "%")
+        filter_sql, filter_params = descendant_path_filter(root, "f.path")
+        clauses.append(filter_sql)
+        params.extend(filter_params)
 
     if paths:
         placeholders = ", ".join("?" for _ in paths)

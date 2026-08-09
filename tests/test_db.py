@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from locidx.db import Database, default_db_path, temp_db_path, load
+from locidx.db import Database, default_db_path, descendant_path_filter, load, temp_db_path
 from tests.helpers import LocIdxTestCase
 
 
@@ -29,6 +29,29 @@ class DatabaseTest(LocIdxTestCase):
         rows = load(db, "SELECT * FROM roots")
         self.assertEqual(rows, [{"path": "/x", "created_at": "now"}])
         db.close()
+
+    def test_descendant_path_filter_is_exact_and_case_sensitive(self):
+        root = os.path.abspath(self.tmp(r"100%_ready\\folder"))
+        filter_sql, params = descendant_path_filter(root, "path")
+        db = self.db()
+        self.addCleanup(db.close)
+        paths = [
+            root + os.sep + "inside.py",
+            root + "-app" + os.sep + "outside.py",
+            root.upper() + os.sep + "case.py",
+        ]
+        for path in paths:
+            db.execute(
+                "INSERT INTO files(path, size, mtime, text_hash, indexed_at) VALUES (?, ?, ?, ?, ?)",
+                (path, 1, 1, "hash", "now"),
+            )
+        db.commit()
+
+        matched = db.query(
+            "SELECT path FROM files WHERE " + filter_sql + " ORDER BY path",
+            params,
+        )
+        self.assertEqual([row["path"] for row in matched], [paths[0]])
 
 
 if __name__ == "__main__":

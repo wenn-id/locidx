@@ -31,6 +31,31 @@ class IndexerTest(LocIdxTestCase):
         db.commit()
         self.assertEqual(db.query("SELECT COUNT(*) AS n FROM files")[0]["n"], 0)
 
+    def test_incremental_root_does_not_remove_sibling_prefix(self):
+        root = self.tmp("root")
+        sibling = self.tmp("root-app")
+        os.makedirs(root, exist_ok=True)
+        os.makedirs(sibling, exist_ok=True)
+        with open(os.path.join(root, "inside.py"), "w") as fh:
+            fh.write("inside\n")
+        with open(os.path.join(sibling, "outside.py"), "w") as fh:
+            fh.write("outside\n")
+        db = self.db()
+        self.addCleanup(db.close)
+
+        Indexer(sibling, db).run()
+        Indexer(root, db).run()
+        db.commit()
+
+        paths = {row["path"] for row in db.query("SELECT path FROM files")}
+        self.assertEqual(
+            paths,
+            {
+                os.path.join(root, "inside.py"),
+                os.path.join(sibling, "outside.py"),
+            },
+        )
+
     def test_incremental_skips_unchanged(self):
         root = self.tree({"a.py": "x\n"})
         db = self.index(root)

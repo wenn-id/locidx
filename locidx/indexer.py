@@ -16,7 +16,7 @@ import os
 import time
 
 from . import ignore as ignore_mod
-from .db import Database
+from .db import Database, descendant_path_filter
 
 _IGNORE_FILES = (".gitignore", ".locidxignore")
 _DB_FILES = (".locidx.sqlite", ".locidx.sqlite-wal", ".locidx.sqlite-shm")
@@ -106,9 +106,10 @@ class Indexer:
         stats = {"added": 0, "removed": 0, "updated": 0, "skipped": 0, "total": 0}
 
         # Load current index contents for this root.
+        filter_sql, filter_params = descendant_path_filter(self.root, "path")
         rows = self.db.query(
-            "SELECT path, size, mtime FROM files WHERE path LIKE ?",
-            (self.root + "%",),
+            "SELECT path, size, mtime FROM files WHERE " + filter_sql,
+            filter_params,
         )
         old = {r["path"]: (r["size"], r["mtime"]) for r in rows}
 
