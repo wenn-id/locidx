@@ -16,7 +16,7 @@ import os
 import time
 
 from . import ignore as ignore_mod
-from .db import Database
+from .db import Database, path_prefix_pattern
 
 _IGNORE_FILES = (".gitignore", ".locidxignore")
 _DB_FILES = (".locidx.sqlite", ".locidx.sqlite-wal", ".locidx.sqlite-shm")
@@ -107,8 +107,8 @@ class Indexer:
 
         # Load current index contents for this root.
         rows = self.db.query(
-            "SELECT path, size, mtime FROM files WHERE path LIKE ?",
-            (self.root + "%",),
+            "SELECT path, size, mtime FROM files WHERE path LIKE ? ESCAPE '\\'",
+            (path_prefix_pattern(self.root),),
         )
         old = {r["path"]: (r["size"], r["mtime"]) for r in rows}
 

@@ -45,6 +45,27 @@ class SearchTest(LocIdxTestCase):
         self.assertEqual(len(search(db, "needle", root=root)), 1)
         self.assertEqual(len(search(db, "needle")), 2)
 
+    def test_root_filter_does_not_match_sibling_prefix(self):
+        root = self.tmp("root")
+        sibling = self.tmp("root-app")
+        os.makedirs(root, exist_ok=True)
+        os.makedirs(sibling, exist_ok=True)
+        with open(os.path.join(root, "inside.py"), "w") as fh:
+            fh.write("needle\n")
+        with open(os.path.join(sibling, "outside.py"), "w") as fh:
+            fh.write("needle\n")
+        db = self.db()
+        self.addCleanup(db.close)
+        from locidx.indexer import Indexer
+
+        Indexer(root, db).run()
+        Indexer(sibling, db).run()
+        db.commit()
+        self.assertEqual(
+            [result["path"] for result in search(db, "needle", root=root)],
+            [os.path.join(root, "inside.py")],
+        )
+
     def test_max_results(self):
         root = self.tree({"a.py": "x\n" * 10})
         db = self.index(root)

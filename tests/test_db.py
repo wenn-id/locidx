@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from locidx.db import Database, default_db_path, temp_db_path, load
+from locidx.db import Database, default_db_path, load, path_prefix_pattern, temp_db_path
 from tests.helpers import LocIdxTestCase
 
 
@@ -29,6 +29,10 @@ class DatabaseTest(LocIdxTestCase):
         rows = load(db, "SELECT * FROM roots")
         self.assertEqual(rows, [{"path": "/x", "created_at": "now"}])
         db.close()
+
+    def test_path_prefix_pattern_escapes_like_wildcards(self):
+        pattern = path_prefix_pattern("/tmp/100%_ready")
+        self.assertEqual(pattern, "/tmp/100\\%\\_ready/%")
 
 
 if __name__ == "__main__":

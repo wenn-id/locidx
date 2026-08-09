@@ -11,7 +11,7 @@ entire index.
 
 import os
 
-from .db import load
+from .db import path_prefix_pattern
 
 
 def _limit_quotes(pattern):
@@ -31,8 +31,8 @@ def search(db, pattern, root=None, paths=None, max_results=200, case=False):
     clauses = []
 
     if root is not None:
-        clauses.append("f.path LIKE ?")
-        params.append(os.path.abspath(root) + "%")
+        clauses.append("f.path LIKE ? ESCAPE '\\'")
+        params.append(path_prefix_pattern(root))
 
     if paths:
         placeholders = ", ".join("?" for _ in paths)

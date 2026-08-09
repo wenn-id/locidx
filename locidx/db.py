@@ -35,6 +35,14 @@ def temp_db_path():
     return path
 
 
+def path_prefix_pattern(path):
+    """Return an escaped SQLite LIKE pattern for files below ``path``."""
+    root = os.path.abspath(path).rstrip(os.sep)
+    escaped = root.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    separator = os.sep.replace("\\", "\\\\")
+    return escaped + separator + "%"
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS roots (
     path TEXT PRIMARY KEY,
