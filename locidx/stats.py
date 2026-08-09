@@ -3,6 +3,8 @@
 import json
 import os
 
+from .db import descendant_path_filter
+
 # Common programming language signatures by extension.
 # Values are (extension, human name). Order matters: the first match wins.
 _EXTENSIONS = {
@@ -184,8 +186,9 @@ def aggregate(db, root=None, min_lines=3):
     params = []
     where = ""
     if root is not None:
-        where = "WHERE f.path LIKE ?"
-        params.append(os.path.abspath(root) + "%")
+        filter_sql, filter_params = descendant_path_filter(root, "f.path")
+        where = "WHERE " + filter_sql
+        params.extend(filter_params)
 
     rows = db.query(
         "SELECT f.path, c.text FROM files f "

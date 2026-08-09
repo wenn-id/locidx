@@ -66,6 +66,30 @@ class SearchTest(LocIdxTestCase):
             [os.path.join(root, "inside.py")],
         )
 
+    def test_root_filter_is_case_sensitive(self):
+        root = self.tmp("root")
+        case_variant = self.tmp("ROOT")
+        os.makedirs(root, exist_ok=True)
+        os.makedirs(case_variant, exist_ok=True)
+        db = self.db()
+        self.addCleanup(db.close)
+        rows = [
+            (os.path.join(root, "inside.py"), "needle\n"),
+            (os.path.join(case_variant, "outside.py"), "needle\n"),
+        ]
+        for path, text in rows:
+            db.execute(
+                "INSERT INTO files(path, size, mtime, text_hash, indexed_at) VALUES (?, ?, ?, ?, ?)",
+                (path, len(text), 1, "hash", "now"),
+            )
+            db.execute("INSERT INTO content(path, text) VALUES (?, ?)", (path, text))
+        db.commit()
+
+        self.assertEqual(
+            [result["path"] for result in search(db, "needle", root=root)],
+            [os.path.join(root, "inside.py")],
+        )
+
     def test_max_results(self):
         root = self.tree({"a.py": "x\n" * 10})
         db = self.index(root)

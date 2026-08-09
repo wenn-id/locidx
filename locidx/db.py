@@ -35,12 +35,13 @@ def temp_db_path():
     return path
 
 
-def path_prefix_pattern(path):
-    """Return an escaped SQLite LIKE pattern for files below ``path``."""
+def descendant_path_filter(path, column="f.path"):
+    """Return an exact, case-sensitive SQLite filter for descendants of ``path``."""
     root = os.path.abspath(path).rstrip(os.sep)
-    escaped = root.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    separator = os.sep.replace("\\", "\\\\")
-    return escaped + separator + "%"
+    return (
+        f"substr({column}, 1, length(?) + 1) = ? || ?",
+        (root, root, os.sep),
+    )
 
 
 SCHEMA = """
