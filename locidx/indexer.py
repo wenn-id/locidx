@@ -83,7 +83,10 @@ class Indexer:
             except OSError:
                 continue
             if rules:
-                matcher.add(self._rel(root, path), rules)
+                base = self._rel(root, path)
+                if base == ".":
+                    base = ""
+                matcher.add(base, rules)
 
     @staticmethod
     def _read_text(full_path):
