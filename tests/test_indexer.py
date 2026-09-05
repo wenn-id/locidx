@@ -87,6 +87,19 @@ class IndexerTest(LocIdxTestCase):
         paths = {os.path.relpath(r["path"], root) for r in db.query("SELECT path FROM files")}
         self.assertEqual(paths, {"ok.py"})
 
+    def test_respects_root_locidxignore(self):
+        root = self.tree({
+            ".locidxignore": "vendor/\n*.log\n/root-only.py\n",
+            "vendor/big.py": "ignored\n",
+            "debug.log": "ignored\n",
+            "root-only.py": "ignored\n",
+            "nested/root-only.py": "kept\n",
+            "ok.py": "kept\n",
+        })
+        db = self.index(root)
+        paths = {os.path.relpath(r["path"], root) for r in db.query("SELECT path FROM files")}
+        self.assertEqual(paths, {"nested/root-only.py", "ok.py"})
+
     def test_extra_ignore(self):
         root = self.tree({"a.py": "x\n", "b.py": "y\n"})
         db = self.index(root, extra_ignores=["b.py"])
