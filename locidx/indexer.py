@@ -73,6 +73,8 @@ class Indexer:
         return os.path.relpath(path, root)
 
     def _load_ignore_file(self, matcher, root, path):
+        if self.no_ignore:
+            return
         for name in _IGNORE_FILES:
             full = os.path.join(path, name)
             if not os.path.isfile(full):
