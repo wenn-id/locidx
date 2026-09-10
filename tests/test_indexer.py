@@ -100,6 +100,18 @@ class IndexerTest(LocIdxTestCase):
         paths = {os.path.relpath(r["path"], root) for r in db.query("SELECT path FROM files")}
         self.assertEqual(paths, {"nested/root-only.py", "ok.py"})
 
+    def test_no_ignore_disables_nested_ignore_files(self):
+        root = self.tree({
+            ".gitignore": "root-hidden.py\n",
+            "root-hidden.py": "kept with no-ignore\n",
+            "nested/.locidxignore": "nested-hidden.py\n",
+            "nested/nested-hidden.py": "kept with no-ignore\n",
+            "ok.py": "kept\n",
+        })
+        db = self.index(root, no_ignore=True)
+        paths = {os.path.relpath(r["path"], root) for r in db.query("SELECT path FROM files")}
+        self.assertEqual(paths, {"root-hidden.py", "nested/nested-hidden.py", "ok.py"})
+
     def test_extra_ignore(self):
         root = self.tree({"a.py": "x\n", "b.py": "y\n"})
         db = self.index(root, extra_ignores=["b.py"])
